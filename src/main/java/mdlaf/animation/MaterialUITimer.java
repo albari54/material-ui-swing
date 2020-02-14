@@ -24,6 +24,7 @@
 package mdlaf.animation;
 
 import mdlaf.components.button.MaterialButtonUI;
+import mdlaf.utils.MaterialLoggerSingleton;
 
 
 import javax.swing.*;
@@ -157,6 +158,7 @@ public class MaterialUITimer implements MouseListener, ActionListener, MouseMoti
             if (timer.isRunning()) {
                 if ((component instanceof JButton) &&
                         wrapperInformationsButton != null) {
+                    MaterialLoggerSingleton.getInstance().debug(getClass(), "JButton is disabled and now the library set the default color");
                     JButton buttonComponent = (JButton) component;
                     wrapperInformationsButton.setOriginValues(buttonComponent);
                 }
