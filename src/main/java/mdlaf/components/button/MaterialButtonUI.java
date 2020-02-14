@@ -23,7 +23,6 @@
  */
 package mdlaf.components.button;
 
-import com.sun.javafx.scene.traversal.SubSceneTraversalEngine;
 import mdlaf.animation.MaterialUIMovement;
 import mdlaf.utils.MaterialDrawingUtils;
 import mdlaf.utils.MaterialManagerListener;
@@ -64,6 +63,10 @@ public class MaterialButtonUI extends BasicButtonUI {
     protected PropertyChangeListener enableButton = new EventEnableButton();
     protected boolean paintedDisabled = false;
     protected boolean buttonBorderToAll = false;
+    protected boolean mouseHoverDefaultButtonInitialized = false;
+    protected boolean mouseHoverNormalButtonInitialized = false;
+    protected boolean disabledDefaultButton = false;
+
 
     @Override
     public void installUI(JComponent c) {
@@ -90,12 +93,7 @@ public class MaterialButtonUI extends BasicButtonUI {
         button.setForeground(foreground);
         this.arch = UIManager.getInt("Button.arc");
         //button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        if (mouseHoverEnabled) {
-            JButton b = (JButton) button;
-            if (!b.isDefaultButton()) {
-                button.addMouseListener(MaterialUIMovement.getMovement(button, UIManager.getColor("Button.mouseHoverColor")));
-            }
-        }
+
         button.setFocusable(UIManager.getBoolean("Button.focusable"));
         this.button = button;
     }
@@ -117,7 +115,6 @@ public class MaterialButtonUI extends BasicButtonUI {
         button.setCursor(null);
 
         MaterialManagerListener.removeAllMaterialMouseListener(button);
-
     }
 
     @Override
@@ -126,15 +123,25 @@ public class MaterialButtonUI extends BasicButtonUI {
         if (b.isContentAreaFilled()) {
             paintBackground(g, b);
         }
+
+        if (!b.isEnabled()) {
+            b.setEnabled(true);
+            if (b.isDefaultButton()) {
+                disabledDefaultButton = true;
+                defaultButton = b.isDefaultButton();
+            }
+            b.setEnabled(false);
+        }
+
         if (defaultButton == null && b.isEnabled()) {
-            defaultButton = ((JButton) button).isDefaultButton();
+            defaultButton = b.isDefaultButton();
             if (defaultButton) {
                 if (mouseHoverEnabled) {
-                    MaterialManagerListener.removeAllMaterialMouseListener(b);
+                    //MaterialManagerListener.removeAllMaterialMouseListener(b);
                     b.addMouseListener(MaterialUIMovement.getMovement(b, UIManager.getColor("Button[Default].mouseHoverColor")));
                 }
-                paintStateButton(c, g);
             }
+            paintStateButton(c, g);
         }
         super.paint(g, c);
     }
@@ -152,10 +159,10 @@ public class MaterialButtonUI extends BasicButtonUI {
                     textRect.x + getTextShiftOffset(),
                     textRect.y + fm.getAscent() + getTextShiftOffset());
         } else {
-            if((defaultButton != null && defaultButton)){
+            if ((defaultButton != null && defaultButton)) {
                 button.setBackground(disabledDefaultBackground);
                 g.setColor(disabledDefaultForeground);
-            }else{
+            } else {
                 g.setColor(disabledForeground);
             }
             BasicGraphicsUtils.drawStringUnderlineCharAt(g, text, mnemonicIndex,
@@ -173,14 +180,14 @@ public class MaterialButtonUI extends BasicButtonUI {
         Graphics2D graphics = (Graphics2D) g.create();
         g.setColor(c.getBackground());
         JButton b = (JButton) c;
-        if (buttonBorderToAll && (button.getIcon() != null)) {
+        if (!buttonBorderToAll && (button.getIcon() != null)) {
             g.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), arch, arch);
         } else {
             g.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), arch, arch);
             if (defaultButton != null && defaultButton) {
-                if(c.isEnabled()){
+                if (c.isEnabled()) {
                     g.setColor(defaultBackground);
-                }else{
+                } else {
                     g.setColor(disabledDefaultBackground);
                 }
                 if (UIManager.getBoolean("Button[Default].shadowEnable")) {
@@ -206,6 +213,25 @@ public class MaterialButtonUI extends BasicButtonUI {
     @Override
     public void update(Graphics g, JComponent c) {
         super.update(g, c);
+        if (disabledDefaultButton && !mouseHoverDefaultButtonInitialized && c.isEnabled()) {
+            if (mouseHoverEnabled) {
+                System.out.println("disable button now have the mouse hover");
+                //MaterialManagerListener.removeAllMaterialMouseListener(c);
+                c.addMouseListener(MaterialUIMovement.getMovement(c, UIManager.getColor("Button[Default].mouseHoverColor")));
+                mouseHoverDefaultButtonInitialized = true;
+            }
+        }else if(!disabledDefaultButton && (defaultButton != null && !defaultButton) && c.isEnabled()){
+            if(mouseHoverEnabled && !mouseHoverNormalButtonInitialized){
+                mouseHoverNormalButtonInitialized = true;
+                c.addMouseListener(MaterialUIMovement.getMovement(c, UIManager.getColor("Button.mouseHoverColor")));
+            }
+        }
+
+        if(button.isEnabled() && !button.getCursor().equals(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR))){
+            button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        }else if(!button.isEnabled() && !button.getCursor().equals(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR))){
+            button.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        }
         //c.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
@@ -289,9 +315,10 @@ public class MaterialButtonUI extends BasicButtonUI {
         if (b.isEnabled() && (defaultButton != null && defaultButton) && !b.isSelected()) {
             b.setBackground(defaultBackground);
             b.setForeground(defaultForeground);
-        }else if(!b.isEnabled() && (defaultButton != null && defaultButton)){
+        } else if (!b.isEnabled() && (defaultButton != null && defaultButton)) {
             b.setBackground(disabledDefaultBackground);
             b.setForeground(disabledDefaultForeground);
+            //MaterialManagerListener.removeAllMaterialMouseListener(button);
         } else if (!b.isEnabled()) {
             b.setBackground(disabledBackground);
             b.setForeground(disabledForeground);
@@ -316,12 +343,12 @@ public class MaterialButtonUI extends BasicButtonUI {
     }
 
     public void setBackground(Color color) {
-        if(color == null){
+        if (color == null) {
             throw new IllegalArgumentException("Color null");
         }
-        if(this.defaultButton != null && this.defaultButton){
+        if (this.defaultButton != null && this.defaultButton) {
             this.defaultBackground = color;
-        }else{
+        } else {
             this.background = color;
         }
         button.repaint();
@@ -394,22 +421,17 @@ public class MaterialButtonUI extends BasicButtonUI {
 
     protected class EventEnableButton implements PropertyChangeListener {
 
-        private String proprietyNameEnableEvent = "enabled";
-        private String proprietyNameDefaultEvent = "defaultButton";
+        private final String ENABLE_EVENT_BUTTON = "enabled";
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) {
             if (evt == null) {
                 throw new IllegalArgumentException("The event null");
             }
-
-            if (evt.getPropertyName().equals(proprietyNameEnableEvent) && (boolean) evt.getNewValue()) {
+            if (evt.getPropertyName().equals(ENABLE_EVENT_BUTTON) && (boolean) evt.getNewValue()) {
                 button.setBackground(background);
                 button.setForeground(foreground);
-            } else if (evt.getPropertyName().equals(proprietyNameEnableEvent) && !(boolean) evt.getNewValue()) {
-                background = button.getBackground();
-                foreground = button.getForeground();
-            } else if (evt.getPropertyName().equals(proprietyNameDefaultEvent) && (boolean) evt.getNewValue()) {
+            } else if (evt.getPropertyName().equals(ENABLE_EVENT_BUTTON) && !(boolean) evt.getNewValue()) {
                 background = button.getBackground();
                 foreground = button.getForeground();
             }

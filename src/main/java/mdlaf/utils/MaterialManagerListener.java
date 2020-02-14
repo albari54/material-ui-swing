@@ -26,7 +26,9 @@ package mdlaf.utils;
 import mdlaf.animation.MaterialUITimer;
 
 import javax.swing.*;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 
 /**
  * @author https://github.com/vincenzopalazzo
@@ -41,7 +43,7 @@ public class MaterialManagerListener {
             throw new IllegalArgumentException("Argument is null");
         }
         for(MouseListener mouseListener : component.getListeners(MouseListener.class)){
-            if (mouseListener instanceof MaterialUITimer){
+            if(mouseListener instanceof MaterialUITimer){
                 component.removeMouseListener(mouseListener);
             }
         }

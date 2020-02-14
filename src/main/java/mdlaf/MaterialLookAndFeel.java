@@ -151,6 +151,23 @@ public class MaterialLookAndFeel extends MetalLookAndFeel {
         throw new MaterialChangeThemeException("The look and feel setted not is MaterialLookAnfFeel");
     }
 
+    public static synchronized void setDefaultButtonToRootPane(JRootPane rootPane, JButton button){
+        if(rootPane == null && button == null){
+            //TODO make a good message
+            throw new IllegalArgumentException("TODO");
+        }
+
+        if(!button.isEnabled()){
+            rootPane.setDefaultButton(button);
+            JButton button1 = rootPane.getDefaultButton();
+            button1.setEnabled(true);
+            button1.repaint();
+            button1.setEnabled(false);
+        }else{
+            rootPane.setDefaultButton(button);
+        }
+    }
+
     public MaterialLookAndFeel() {
         this(new MaterialLiteTheme());
     }
